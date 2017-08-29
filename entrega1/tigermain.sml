@@ -5,27 +5,29 @@ open tigerseman
 open tigerabs
 open BasicIO Nonstdio
 
+fun maxIntInList(l) = List.foldr Int.max 0 l
+
 fun maxargs (VarExp(var,_)) = printInVar var
-  | maxargs (CallExp({func, args},_)) = if func = "print" then Int.max (List.length args) (List.foldr Int.max 0 (List.map maxargs args)) else List.foldr Int.max 0 (List.map maxargs args)
+  | maxargs (CallExp({func, args},_)) = if func = "print" then Int.max((List.length args),(maxIntInList(List.map maxargs args))) else maxIntInList(List.map maxargs args)
   | maxargs (OpExp({left, oper, right},_)) = Int.max(maxargs left, maxargs right)
-  | maxargs (RecordExp({fields,...},_)) = maxargs #2(fields)
-  | maxargs (SeqExp(exp,_)) = maxargs exp
+  | maxargs (RecordExp({fields,...},_)) = maxIntInList(List.map (maxargs o #2) fields)
+  | maxargs (SeqExp(exp,_)) = maxIntInList(List.map maxargs exp)
   | maxargs (AssignExp({exp,...},_)) = maxargs exp
-  | maxargs (IfExp({test, then', else'},_)) = Int.max(Int.max(maxargs test, maxargs then'), maxargs else')
+  | maxargs (IfExp({test, then', else'},_)) = Int.max(Int.max(maxargs test, maxargs then'), if Option.isSome(else') then maxargs (Option.valOf(else')) else 0)
   | maxargs (WhileExp({test, body},_)) = Int.max(maxargs test, maxargs body)
   | maxargs (ForExp({lo, hi, body,...},_)) = Int.max(Int.max(maxargs lo, maxargs hi), maxargs body)
-  | maxargs (LetExp({decs,body},_)) = Int.max(maxargs body, printInDec decs)
+  | maxargs (LetExp({decs,body},_)) = Int.max(maxargs body, maxIntInList(List.map printInDec decs))
   | maxargs (ArrayExp({size,init,...},_)) = Int.max(maxargs size, maxargs init)
   | maxargs _ = 0
 and printInVar (SubscriptVar(var,exp)) = Int.max(printInVar var, maxargs exp)
   | printInVar (FieldVar(var,_)) = printInVar var
   | printInVar _ = 0
-and printInDec (FunctionDec({body,...},_)) = maxargs body
-  | printInDec (VarDec({init,...},_)) = maxargs init
+and printInDec (VarDec({init,...},_)) = maxargs init
+  | printInDec (FunctionDec(li)) = maxIntInList(List.map (maxargs o #body o #1) li)
   | printInDec _ = 0
 
 fun lexstream(is: instream) =
-	Lexing.createLexer(fn b => fn n => buff_input is b 0 n);
+	Lexing.createLexer(fn b => fn n => buff_input is b 0 n)
 fun errParsing(lbuf) = (print("Error en parsing!("
 	^(makestring(!num_linea))^
 	")["^(Lexing.getLexeme lbuf)^"]\n"); raise Fail "fin!")
@@ -49,9 +51,11 @@ fun main(args) =
 	val expr = prog Tok lexbuf handle _ => errParsing lexbuf
 	val _ = findEscape(expr)
 	val _ = if arbol then tigerpp.exprAst expr else ()
+	val argsSize = maxargs(expr)
   in
       transProg(expr);
-      print "yes!!\n"
+      print "yes!!\n";
+      print (Int.toString(argsSize))
   end	handle Fail s => print("Fail: "^s^"\n")
 
 val _ = main(CommandLine.arguments())
