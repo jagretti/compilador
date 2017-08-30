@@ -27,10 +27,12 @@ and printInDec (VarDec({init,...},_)) = maxargs init
   | printInDec _ = 0
 
 fun sum (x,y) = x + y
+fun isplus (PlusOp) = 1
+| isplus _ = 0
 fun sumList l = foldr sum 0 l
 fun cantplus (VarExp(var,_)) = plusInVar var
   | cantplus (CallExp({func, args},_)) = sumList(List.map cantplus args)
-  | cantplus (OpExp({left, oper, right},_)) = (cantplus left) + (cantplus right)
+  | cantplus (OpExp({left, oper, right},_)) = isplus(oper) + (cantplus left) + (cantplus right)
   | cantplus (RecordExp({fields,...},_)) = sumList(List.map (cantplus o #2) fields)
   | cantplus (SeqExp(exp,_)) = sumList(List.map cantplus exp)
   | cantplus (AssignExp({exp,...},_)) = cantplus exp
@@ -73,10 +75,14 @@ fun main(args) =
 	val _ = findEscape(expr)
 	val _ = if arbol then tigerpp.exprAst expr else ()
 	val argsSize = maxargs(expr)
+	val plusAmount = cantplus(expr)
   in
       transProg(expr);
       print "yes!!\n";
-      print (Int.toString(argsSize))
+      print (Int.toString(argsSize));
+      print "\n";
+      print (Int.toString(plusAmount));
+      print "\n"
   end	handle Fail s => print("Fail: "^s^"\n")
 
 val _ = main(CommandLine.arguments())
