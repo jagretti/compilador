@@ -26,6 +26,27 @@ and printInDec (VarDec({init,...},_)) = maxargs init
   | printInDec (FunctionDec(li)) = maxIntInList(List.map (maxargs o #body o #1) li)
   | printInDec _ = 0
 
+fun sum (x,y) = x + y
+fun sumList l = foldr sum 0 l
+fun cantplus (VarExp(var,_)) = plusInVar var
+  | cantplus (CallExp({func, args},_)) = sumList(List.map cantplus args)
+  | cantplus (OpExp({left, oper, right},_)) = (cantplus left) + (cantplus right)
+  | cantplus (RecordExp({fields,...},_)) = sumList(List.map (cantplus o #2) fields)
+  | cantplus (SeqExp(exp,_)) = sumList(List.map cantplus exp)
+  | cantplus (AssignExp({exp,...},_)) = cantplus exp
+  | cantplus (IfExp({test, then', else'},_)) = (cantplus test) + (cantplus then') + (if Option.isSome(else') then cantplus (Option.valOf(else')) else 0)
+  | cantplus (WhileExp({test, body},_)) = (cantplus test) + (cantplus body)
+  | cantplus (ForExp({lo, hi, body,...},_)) = (cantplus lo) + (cantplus hi) + (cantplus body)
+  | cantplus (LetExp({decs,body},_)) = (cantplus body) + sumList(List.map plusInDec decs)
+  | cantplus (ArrayExp({size,init,...},_)) = (cantplus size) + (cantplus init)
+  | cantplus _ = 0
+and plusInVar (SubscriptVar(var,exp)) = (plusInVar var) + (cantplus exp)
+  | plusInVar (FieldVar(var,_)) = plusInVar var
+  | plusInVar _ = 0
+and plusInDec (VarDec({init,...},_)) = cantplus init
+  | plusInDec (FunctionDec(li)) = sumList(List.map (cantplus o #body o #1) li)
+  | plusInDec _ = 0
+		       
 fun lexstream(is: instream) =
 	Lexing.createLexer(fn b => fn n => buff_input is b 0 n)
 fun errParsing(lbuf) = (print("Error en parsing!("
