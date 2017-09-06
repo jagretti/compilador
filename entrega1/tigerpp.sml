@@ -4,6 +4,9 @@ struct
 *)
 
 open tigerabs
+open tigermuestratipos
+open tigertips
+open tigersres
 open PP
 
 fun ppexpr pps e0 = 
@@ -218,3 +221,18 @@ fun exprAst e =
 	(ppexpr ppstrm e;
 	flush_ppstream ppstrm;
 	TextIO.output(TextIO.stdOut, "\n"))
+
+
+fun prettyPrintTipo (TNil) = print "TNil\n"
+  | prettyPrintTipo (TUnit) = print "TUnit\n"
+  | prettyPrintTipo (TInt) = print "TInt\n"
+  | prettyPrintTipo (TString) = print "TString\n"
+  | prettyPrintTipo (TArray(r,uniq)) = (print "TArray"; prettyPrintTipo (!r))
+  | prettyPrintTipo (TRecord(l, uniq)) = ((List.map  (fn(s,r,i) => (print s; prettyPrintTipo (!r))) l); ())
+  | prettyPrintTipo (TTipo(s)) = (print "TTipo"; print s)
+
+fun prettyPrintEnv (VIntro) = print "VIntro\n"
+  | prettyPrintEnv (Var({ty = t})) =  (print "Var"; prettyPrintTipo(t))
+  | prettyPrintEnv (Func({label, formals, result, ...})) = (print "Func " ; print label; List.map prettyPrintTipo formals; prettyPrintTipo(result))
+
+

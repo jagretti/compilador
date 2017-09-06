@@ -25,8 +25,7 @@ EXEFILE=
 .SUFFIXES : .sig .sml .ui .uo
 
 GRALOBJS= tigerabs.uo tigergrm.uo tigerlex.uo tigermain.uo \
-	tigernlin.uo tigerpp.uo tigerescap.uo tigertab.uo tigerseman.uo tigertemp.uo tigertopsort.uo tigermuestratipos.uo \
-	tigerprettyprinters.uo
+	tigernlin.uo tigerpp.uo tigerescap.uo tigertab.uo tigerseman.uo tigertemp.uo tigertopsort.uo tigermuestratipos.uo 
 
 all: tiger
 
@@ -58,23 +57,22 @@ clean:
 	$(MOSMLC) $<
 
 depend: tigerabs.sml tigergrm.sml tigerlex.sml tigermain.sml \
-	tigernlin.sml tigerpp.sml tigertopsort.sml tigermuestratipos.sml tigerprettyprinters.sml
+	tigernlin.sml tigerpp.sml tigertopsort.sml tigermuestratipos.sml
 	$(REMOVE) Makefile.bak
 	$(MOVE) Makefile Makefile.bak
 	$(MOSMLTOOLS)/cutdeps < Makefile.bak > Makefile
 	$(MOSMLTOOLS)/mosmldep >> Makefile
 
 ### DO NOT DELETE THIS LINE
-tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui \
-    tigerprettyprinters.uo tigerlex.uo tigerabs.uo tigerpp.uo 
+tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigerlex.uo \
+    tigerabs.uo tigerpp.uo 
 tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
 tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigerabs.uo 
 tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
-tigerprettyprinters.uo: tigersres.uo tigermuestratipos.ui 
 tigertemp.uo: tigertemp.ui 
 tigermuestratipos.uo: tigermuestratipos.ui tigertips.uo 
 tigergrm.uo: tigergrm.ui tigernlin.uo tigerabs.uo 
-tigerpp.uo: tigerabs.uo 
+tigerpp.uo: tigersres.uo tigertips.uo tigerabs.uo tigermuestratipos.ui 
 tigertopsort.uo: tigertopsort.ui tigertab.ui tigertips.uo tigerabs.uo \
     tigermuestratipos.ui 
 tigermuestratipos.ui: tigertips.uo 

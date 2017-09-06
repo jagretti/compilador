@@ -3,7 +3,6 @@ open tigergrm
 open tigerescap
 open tigerseman
 open tigerabs
-open tigerprettyprinters
 open BasicIO Nonstdio
 
 fun maxIntInList(l) = List.foldr Int.max 0 l
@@ -77,7 +76,7 @@ fun main(args) =
 	val _ = if arbol then tigerpp.exprAst expr else ()
 	val argsSize = maxargs(expr)
 	val plusAmount = cantplus(expr)
-	val lista = [("print", Func{level=mainLevel, label="print",
+(*	val lista = [("print", Func{level=mainLevel, label="print",
                 formals=[TString], result=TUnit, extern=true}),
         ("flush", Func{level=mainLevel, label="flush",
                 formals=[], result=TUnit, extern=true}),
@@ -97,15 +96,15 @@ fun main(args) =
                 formals=[TInt], result=TInt, extern=true}),
         ("exit", Func{level=mainLevel, label="exit",
                 formals=[TInt], result=TUnit, extern=true})
-        ]
+        ]*)
   in
       transProg(expr);
       print "yes!!\n";
       print (Int.toString(argsSize));
       print "\n";
       print (Int.toString(plusAmount));
-      print "\n";
-      prettyPrintEnv(map (#2) lista)
+      print "\n"
+      (*prettyPrintEnv(map (#2) lista)*)
   end	handle Fail s => print("Fail: "^s^"\n")
 
 val _ = main(CommandLine.arguments())
