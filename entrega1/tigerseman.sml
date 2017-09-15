@@ -129,26 +129,23 @@ fun transExp(venv, tenv) =
 		  else if tiposIguales ty (!t) then verificar cs ds
 		  else error("Error de tipo del campo "^s, nl)
 	      val _ = verificar cs tfields
-	  in
-	      {exp=(), ty=tyr}
-	  end
+	  in {exp=(), ty=tyr} end
 	| trexp(SeqExp(s, nl)) =
 	  let	val lexti = map trexp s
 		val exprs = map (fn{exp, ty} => exp) lexti
 		val {exp, ty=tipo} = hd(rev lexti)
-	  in	{exp=(), ty=tipo } end
+	  in {exp=(), ty=tipo} end
 	| trexp(AssignExp({var=SimpleVar s, exp}, nl)) =
 	  let val {exp=ee, ty=te} = trexp exp
-	      val tv = if tabEsta(s,venv) then tabBusca(s,venv) else error("Error variable sin definir")
-	      val _ = if tv <> TIntRO then error("Error de asignación a variable de solo lectura")
-	  in {exp=(), ty=TUnit} end
-	      {exp=(), ty=TUnit} (*COMPLETAR*)
+(*	      val tv = if tabEsta(s,venv) then tabBusca(s,venv) else error("Error variable sin definir") 
+	      val _  = if tv <> TIntRO then error("Error de asignación a variable de solo lectura") *)
+	  in {exp=(), ty=TUnit} end (*COMPLETAR*)
 	| trexp(AssignExp({var, exp}, nl)) =
-	  let val {exp=ev, ty=tv} = transVar(venv,var)
+(*	  let val {exp=ev, ty=tv} = transVar(venv,var)
 	      val {exp=ee, ty=te} = trexp exp
-	      val _ = if te <> TUnit andalso tiposIguales tv te then () else error("Error de asignación, el tipo declarado no coincide con el tipo asignado",nl)
-	  in {exp=(), ty=TUnit} end
-	(*{exp=(), ty=TUnit} (*COMPLETAR*)*)
+	      val _ = if te <> TUnit andalso tiposIguales tv te then () else error("Error de asignación, el tipo declarado no coincide con el tipo asignado",nl) 
+	  in  {exp=(), ty=TUnit} end *)
+	{exp=(), ty=TUnit} (*COMPLETAR*)
 	| trexp(IfExp({test, then', else'=SOME else'}, nl)) =
 	  let val {exp=testexp, ty=tytest} = trexp test
 	      val {exp=thenexp, ty=tythen} = trexp then'
@@ -174,45 +171,48 @@ fun transExp(venv, tenv) =
 	      else error("El cuerpo de un while no puede devolver un valor", nl)
 	  end
 	| trexp(ForExp({var, escape, lo, hi, body}, nl)) =
-	  let val {explo, tylo} = trexp lo
-	      val _ = if tylo = TInt then () else error("Error 1")
-	      val {exphi, tyhi} = trexp hi
-	      val _ = if tyhi = TInt then () else error("Error 2")
-	      val venv' = tabInserta var (Var{ty=TIntRO}) venv
-	      val {expbody, tybody} = transExp(tenv,venv',body)
-	      val _ = if tybody = TUnit then () else error("Error 3")
-							  {exp=(), ty=TUnit} (*COMPLETAR*)
-		| trexp(LetExp({decs, body}, _)) =
-		  let
-		      val (venv', tenv', _) = List.foldl (fn (d, (v, t, _)) => trdec(v, t) d) (venv, tenv, []) decs
-		      val {exp=expbody,ty=tybody}=transExp (venv', tenv') body
-		  in 
-		      {exp=(), ty=tybody}
-		  end
-		| trexp(BreakExp nl) =
-		  {exp=(), ty=TUnit} (*COMPLETAR*)
-		| trexp(ArrayExp({typ, size, init}, nl)) =
-		  {exp=(), ty=TUnit} (*COMPLETAR*)
-	      and trvar(SimpleVar s, nl) =
-		  {exp=(), ty=TUnit} (*COMPLETAR*)
-		| trvar(FieldVar(v, s), nl) =
-		  {exp=(), ty=TUnit} (*COMPLETAR*)
-		| trvar(SubscriptVar(v, e), nl) =
-		  {exp=(), ty=TUnit} (*COMPLETAR*)
-	      and trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 
-		  (venv, tenv, []) (*COMPLETAR*)
-		| trdec (venv,tenv) (VarDec ({name,escape,typ=SOME s,init},pos)) =
-		  (venv, tenv, []) (*COMPLETAR*)
-		| trdec (venv,tenv) (FunctionDec fs) =
-		  (venv, tenv, []) (*COMPLETAR*)
-		| trdec (venv,tenv) (TypeDec ts) =
-		  (venv, tenv, []) (*COMPLETAR*)
-	  in trexp end
-      fun transProg ex =
-	let	val main =
-		    LetExp({decs=[FunctionDec[({name="_tigermain", params=[],
-						result=NONE, body=ex}, 0)]],
-			    body=UnitExp 0}, 0)
-		val _ = transExp(tab_vars, tab_tipos) ex (*main*)
-	in	print "bien!\n" end
+	  let
+	      val {exp=explo, ty=tylo} = trexp lo
+	      val _ = if tylo = TInt then () else error("Error 1",nl)
+	      val {exp=exphi, ty=tyhi} = trexp hi
+	      val _ = if tyhi = TInt then () else error("Error 2",nl)
+	      val venv' = tabInserta(var, (Var{ty=TIntRO}), venv)
+	      val {exp=expbody, ty=tybody} = transExp(venv', tenv) body
+	      val _ = if tybody = TUnit then () else error("Error 3",nl)
+	  in
+	      {exp=(), ty=TUnit}
+	  end (*COMPLETAR*)
+	| trexp(LetExp({decs, body}, _)) =
+	  let
+	      val (venv', tenv', _) = List.foldl (fn (d, (v, t, _)) => trdec(v, t) d) (venv, tenv, []) decs
+	      val {exp=expbody,ty=tybody}=transExp (venv', tenv') body
+	  in 
+	      {exp=(), ty=tybody}
+	  end
+	| trexp(BreakExp nl) =
+	  {exp=(), ty=TUnit} (*COMPLETAR*)
+	| trexp(ArrayExp({typ, size, init}, nl)) =
+	  {exp=(), ty=TUnit} (*COMPLETAR*)
+      and trvar(SimpleVar s, nl) =
+	  {exp=(), ty=TUnit} (*COMPLETAR*)
+	| trvar(FieldVar(v, s), nl) =
+	  {exp=(), ty=TUnit} (*COMPLETAR*)
+	| trvar(SubscriptVar(v, e), nl) =
+	  {exp=(), ty=TUnit} (*COMPLETAR*)
+      and trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 
+	  (venv, tenv, []) (*COMPLETAR*)
+	| trdec (venv,tenv) (VarDec ({name,escape,typ=SOME s,init},pos)) =
+	  (venv, tenv, []) (*COMPLETAR*)
+	| trdec (venv,tenv) (FunctionDec fs) =
+	  (venv, tenv, []) (*COMPLETAR*)
+	| trdec (venv,tenv) (TypeDec ts) =
+	  (venv, tenv, []) (*COMPLETAR*)
+  in trexp end
+fun transProg ex =
+  let	val main =
+	    LetExp({decs=[FunctionDec[({name="_tigermain", params=[],
+					result=NONE, body=ex}, 0)]],
+		    body=UnitExp 0}, 0)
+	val _ = transExp(tab_vars, tab_tipos) ex (*main*)
+  in	print "bien!\n" end
 end
