@@ -137,15 +137,15 @@ fun transExp(venv, tenv) =
 	  in {exp=(), ty=tipo} end
 	| trexp(AssignExp({var=SimpleVar s, exp}, nl)) =
 	  let val {exp=ee, ty=te} = trexp exp
-(*	      val tv = if tabEsta(s,venv) then tabBusca(s,venv) else error("Error variable sin definir") 
-	      val _  = if tv <> TIntRO then error("Error de asignación a variable de solo lectura") *)
+	      val tv = if tabEsta(s,tenv) then tabSaca(s,tenv) else error("Error variable sin definir", nl) 
+              val _ = if not(tiposIguales tv TIntRO) then error("Error de asignación a variable de solo lectura", nl) else ()
 	  in {exp=(), ty=TUnit} end (*COMPLETAR*)
 	| trexp(AssignExp({var, exp}, nl)) =
-(*	  let val {exp=ev, ty=tv} = transVar(venv,var)
+	  let val {exp=ev, ty=tv} = trvar(var, nl)
 	      val {exp=ee, ty=te} = trexp exp
 	      val _ = if te <> TUnit andalso tiposIguales tv te then () else error("Error de asignación, el tipo declarado no coincide con el tipo asignado",nl) 
-	  in  {exp=(), ty=TUnit} end *)
-	{exp=(), ty=TUnit} (*COMPLETAR*)
+	  in  {exp=(), ty=TUnit} end 
+	      {exp=(), ty=TUnit} (*COMPLETAR*)
 	| trexp(IfExp({test, then', else'=SOME else'}, nl)) =
 	  let val {exp=testexp, ty=tytest} = trexp test
 	      val {exp=thenexp, ty=tythen} = trexp then'
@@ -194,8 +194,19 @@ fun transExp(venv, tenv) =
 	| trexp(ArrayExp({typ, size, init}, nl)) =
 	  {exp=(), ty=TUnit} (*COMPLETAR*)
       and trvar(SimpleVar s, nl) =
-	  {exp=(), ty=TUnit} (*COMPLETAR*)
+          let
+	      val tipo = case tabBusca(s, tenv) of
+                             SOME t => t
+                           | NONE => error("Variable no definida en el scope",nl)
+          in {exp=(), ty=tipo} end(*COMPLETAR*)
 	| trvar(FieldVar(v, s), nl) =
+	  let
+	      val vartype = case tabBusca(s, tenv) of
+				SOME t => t
+			      | NONE => error("Variable no definida en el scope",nl)
+	      val {exp=ve, ty=vt} = trvarv,nl)
+					 
+					 
 	  {exp=(), ty=TUnit} (*COMPLETAR*)
 	| trvar(SubscriptVar(v, e), nl) =
 	  {exp=(), ty=TUnit} (*COMPLETAR*)
