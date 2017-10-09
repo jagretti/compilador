@@ -142,10 +142,9 @@ fun transExp(venv, tenv) =
 	  in {exp=(), ty=TUnit} end (*COMPLETAR*)
 	| trexp(AssignExp({var, exp}, nl)) =
 	  let val {exp=ev, ty=tv} = trvar(var, nl)
-	      val {exp=ee, ty=te} = trexp exp
+	      val {exp=ee, ty=te} = trexp(exp)
 	      val _ = if te <> TUnit andalso tiposIguales tv te then () else error("Error de asignación, el tipo declarado no coincide con el tipo asignado",nl) 
-	  in  {exp=(), ty=TUnit} end 
-	      {exp=(), ty=TUnit} (*COMPLETAR*)
+	  in  {exp=(), ty=TUnit}(*COMPLETAR*) end 
 	| trexp(IfExp({test, then', else'=SOME else'}, nl)) =
 	  let val {exp=testexp, ty=tytest} = trexp test
 	      val {exp=thenexp, ty=tythen} = trexp then'
@@ -192,25 +191,45 @@ fun transExp(venv, tenv) =
 	| trexp(BreakExp nl) =
 	  {exp=(), ty=TUnit} (*COMPLETAR*)
 	| trexp(ArrayExp({typ, size, init}, nl)) =
-	  {exp=(), ty=TUnit} (*COMPLETAR*)
+            let
+                val {exp=exps,ty=tys} = trexp size
+                val {exp=expi,ty=tyi} = trexp init
+                val _ = if tiposIguales tys (TIntRO) then () else error("El size del arreglo no es entero",nl) 
+                val (ta,ur) = ( case tabBusca(typ,tenv) of
+                                  SOME t => ( case t of
+                                                  TArray (ta',ur') => (ta',ur')
+                                                | _ => error("El tipo "^typ^" no es un arreglo",nl) )
+                                  | _ => error("Tipo "^typ^" no definido",nl) )
+                val _ = if tiposIguales (!ta) tyi then () else error("La expresion inicializadora no es un "^typ,nl)(*no habria que imprimir !ta?*)
+            in {exp=(), ty=TArray (ta,ur)} end 
       and trvar(SimpleVar s, nl) =
           let
-	      val tipo = case tabBusca(s, tenv) of
-                             SOME t => t
-                           | NONE => error("Variable no definida en el scope",nl)
-          in {exp=(), ty=tipo} end(*COMPLETAR*)
+	      val enventry = case tabBusca(s, venv) of
+                             SOME (Var{ty}) => ty
+                           | _ => error("Variable no definida en el scope",nl)
+          in {exp=(), ty=enventry} end(*COMPLETAR*)
 	| trvar(FieldVar(v, s), nl) =
 	  let
-	      val vartype = case tabBusca(s, tenv) of
-				SOME t => t
-			      | NONE => error("Variable no definida en el scope",nl)
-	      val {exp=ve, ty=vt} = trvarv,nl)
-					 
-					 
-	  {exp=(), ty=TUnit} (*COMPLETAR*)
+          val {exp=expv, ty=tyv} = trvar(v,nl)
+	      val vartype = case tyv of
+				            TRecord (l,_) => ( case List.filter (fn x => #1x = s) l of
+                                                   [] => error("Record no tiene campo "^s,nl)
+                                                   | (e::_) => #2e )
+                            | _ => (tigerpp.prettyPrintTipo(tyv) ; error("No se puede indexar porque no es Record",nl)) 
+      in {exp=(), ty=(!vartype)} (*COMPLETAR*) end
 	| trvar(SubscriptVar(v, e), nl) =
-	  {exp=(), ty=TUnit} (*COMPLETAR*)
-      and trdec (venv, tenv) (VarDec ({name,escape,typ=NONE,init},pos)) = 
+      let
+          val {exp=expe, ty=te} = trexp e
+          val {exp=expv, ty=tv} = trvar(v,nl)
+          val _ = if tiposIguales te (TInt) then () else error("Indice debe ser entero",nl)
+      in case tv of
+             TArray (t,_) => {exp=(), ty=(!t)}
+             | _ => error("Indexando algo que no es un arreglo", nl) end
+      and trdec (venv, tenv) (VarDec ({name,escape,typ,init},pos)) = 
+         (* let val {expinit, tyinit} = transExp(tenv, venv, init)
+              val tyv = case typ of
+                            NONE => if tiposIguales tyinit TNil then error("Error HA HA! Baboso", nl) else tyinit 
+                            | SOME => *)
 	  (venv, tenv, []) (*COMPLETAR*)
 	| trdec (venv,tenv) (VarDec ({name,escape,typ=SOME s,init},pos)) =
 	  (venv, tenv, []) (*COMPLETAR*)
@@ -227,3 +246,4 @@ fun transProg ex =
 	val _ = transExp(tab_vars, tab_tipos) ex (*main*)
   in	print "bien!\n" end
 end
+
