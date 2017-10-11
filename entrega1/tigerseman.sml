@@ -226,15 +226,16 @@ fun transExp(venv, tenv) =
              TArray (t,_) => {exp=(), ty=(!t)}
              | _ => error("Indexando algo que no es un arreglo", nl) end
       and trdec (venv, tenv) (VarDec ({name,escape,typ,init},pos)) = 
-         (* let val {expinit, tyinit} = transExp(tenv, venv, init)
+          let val {expinit, tyinit} = transExp(venv, tenv) init
               val tyv = case typ of
                             NONE => if tiposIguales tyinit TNil then error("Error HA HA! Baboso", nl) else tyinit 
-                            | SOME => *)
-	  (venv, tenv, []) (*COMPLETAR*)
-	| trdec (venv,tenv) (VarDec ({name,escape,typ=SOME s,init},pos)) =
-	  (venv, tenv, []) (*COMPLETAR*)
+                            | SOME nt => let val t' = tabBusca nt
+                                             val _ = if tiposIguales(tyinit, t') then () else error("Error (VER QUE VA)") 
+                                         in t' end
+              val venv' = tabInserta venv name (VarEntry{ty=tyv})
+          in venv' end
 	| trdec (venv,tenv) (FunctionDec fs) =
-	  (venv, tenv, []) (*COMPLETAR*)
+	  (venv, tenv, []) (*COMPLETAR*)    
 	| trdec (venv,tenv) (TypeDec ts) =
 	  (venv, tenv, []) (*COMPLETAR*)
   in trexp end
