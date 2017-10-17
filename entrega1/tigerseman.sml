@@ -205,35 +205,37 @@ fun transExp(venv, tenv) =
       and trvar(SimpleVar s, nl) =
           let
 	      val enventry = case tabBusca(s, venv) of
-                             SOME (Var{ty}) => ty
-                           | _ => error("Variable no definida en el scope",nl)
+				 SOME (Var{ty}) => ty
+                               | _ => error("Variable no definida en el scope",nl)
           in {exp=(), ty=enventry} end(*COMPLETAR*)
 	| trvar(FieldVar(v, s), nl) =
 	  let
-          val {exp=expv, ty=tyv} = trvar(v,nl)
+              val {exp=expv, ty=tyv} = trvar(v,nl)
 	      val vartype = case tyv of
-				            TRecord (l,_) => ( case List.filter (fn x => #1x = s) l of
-                                                   [] => error("Record no tiene campo "^s,nl)
-                                                   | (e::_) => #2e )
-                            | _ => (tigerpp.prettyPrintTipo(tyv) ; error("No se puede indexar porque no es Record",nl)) 
-      in {exp=(), ty=(!vartype)} (*COMPLETAR*) end
+				TRecord (l,_) => ( case List.filter (fn x => #1x = s) l of
+                                                       [] => error("Record no tiene campo "^s,nl)
+                                                     | (e::_) => #2e )
+                              | _ => (tigerpp.prettyPrintTipo(tyv) ; error("No se puede indexar porque no es Record",nl)) 
+	  in {exp=(), ty=(!vartype)} (*COMPLETAR*) end
 	| trvar(SubscriptVar(v, e), nl) =
-      let
-          val {exp=expe, ty=te} = trexp e
-          val {exp=expv, ty=tv} = trvar(v,nl)
-          val _ = if tiposIguales te (TInt) then () else error("Indice debe ser entero",nl)
-      in case tv of
-             TArray (t,_) => {exp=(), ty=(!t)}
-             | _ => error("Indexando algo que no es un arreglo", nl) end
+	  let
+              val {exp=expe, ty=te} = trexp e
+              val {exp=expv, ty=tv} = trvar(v,nl)
+              val _ = if tiposIguales te (TInt) then () else error("Indice debe ser entero",nl)
+	  in case tv of
+		 TArray (t,_) => {exp=(), ty=(!t)}
+               | _ => error("Indexando algo que no es un arreglo", nl) end
       and trdec (venv, tenv) (VarDec ({name,escape,typ,init},pos)) = 
-          let val {expinit, tyinit} = transExp(venv, tenv) init
+          let val {exp=expinit, ty=tyinit} = trexp init
               val tyv = case typ of
-                            NONE => if tiposIguales tyinit TNil then error("Error HA HA! Baboso", nl) else tyinit 
-                            | SOME nt => let val t' = tabBusca nt
-                                             val _ = if tiposIguales(tyinit, t') then () else error("Error (VER QUE VA)") 
-                                         in t' end
-              val venv' = tabInserta venv name (VarEntry{ty=tyv})
-          in venv' end
+                            NONE => if tiposIguales tyinit TNil then error("Error HA HA! Baboso", pos) else tyinit 
+                          | SOME nt => let val t' = case tabBusca(nt, tenv) of
+							SOME t'' => t''
+						      | NONE => error("VER ERROR",pos)
+                                           val _  = if tiposIguales tyinit t' then () else error("Error (VER QUE VA)", pos) 
+                                       in t' end
+              val venv' = tabInserta(name, (Var{ty=tyv}), venv)
+          in (venv', tenv, []) end
 	| trdec (venv,tenv) (FunctionDec fs) =
 	  (venv, tenv, []) (*COMPLETAR*)    
 	| trdec (venv,tenv) (TypeDec ts) =
@@ -247,4 +249,3 @@ fun transProg ex =
 	val _ = transExp(tab_vars, tab_tipos) ex (*main*)
   in	print "bien!\n" end
 end
-
