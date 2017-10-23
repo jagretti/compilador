@@ -3,6 +3,7 @@ struct
 
 open tigerabs
 open tigersres
+open tigertopsort
 
 type expty = {exp: unit, ty: Tipo}
 
@@ -65,15 +66,27 @@ fun tiposIguales (TRecord _) TNil = true
     (* end *)raise Fail "No debería pasar! (2)"
   | tiposIguales a b = (a=b)
 
+fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
+
+fun cmpTipo(t1,t2,nl) = if tiposIguales t1 t2 then t1 else error("Tipos distintos en cmpTipo!",nl)
+
 fun transExp(venv, tenv) =
-  let fun error(s, p) = raise Fail ("Error -- línea "^Int.toString(p)^": "^s^"\n")
-      fun trexp(VarExp v) = trvar(v)
+  let fun trexp(VarExp v) = trvar(v)
 	| trexp(UnitExp _) = {exp=(), ty=TUnit}
 	| trexp(NilExp _)= {exp=(), ty=TNil}
 	| trexp(IntExp(i, _)) = {exp=() ,ty=TInt}
 	| trexp(StringExp(s, _)) = {exp=(), ty=TString}
 	| trexp(CallExp({func, args}, nl)) =
-	  {exp=(), ty=TUnit} (*COMPLETAR*)
+      let
+          val (targs,tresult) = case tabBusca(func,venv) of
+              SOME (Func {formals=formals,result=result,level=_,label=_,extern=_}) => (formals,result)
+              | _ => error (func^" no es funciÃ³n o no estÃ¡ siendo definida en este batch.",nl)
+          val lteargs = List.map trexp args
+          val ltargs = List.map (#ty) lteargs
+          val _ = if List.length targs = List.length ltargs then () else error("FunciÃ³n "^func^" invocada con una cantidad incorrecta de argumentos!",nl)
+          val _ = List.map (fn(x,y) => cmpTipo(x,y,nl)) (ListPair.zip(ltargs,targs))
+                  handle Empty => error("NÂº de args",nl)
+      in {ty=tresult, exp=()} end (*COMPLETAR*)
 	| trexp(OpExp({left, oper=EqOp, right}, nl)) =
 	  let
 	      val {exp=_, ty=tyl} = trexp left
@@ -239,10 +252,19 @@ fun transExp(venv, tenv) =
 	| trdec (venv,tenv) (FunctionDec fs) =
 	  (venv, tenv, []) (*COMPLETAR*)    
 	| trdec (venv,tenv) (TypeDec ts) =
-	  (venv, tenv, []) (*COMPLETAR*)
+          let val sortedNames = Listsort.sort 
+                                (fn (({name=x,ty=_},_), ({name=y,ty=_},_)) => if x<y then LESS else (if x>y then GREATER else EQUAL)) 
+                                ts
+              val _ = List.foldr (* Chequea que no hay dos seguidos iguales en sortedNames *)
+                      (fn (t1 as ({name=n1,ty=_},posx), ({name=n2,ty=_},_)) => if n1=n2 then error("Se definiÃ³ dos veces el tipo "^n1^" en un mismo batch.",posx) else t1)
+                      ({name="",ty=NameTy ""},0) (* Invento un tipo con nombre "" que no va a ser igual a ninguno de los que se definan. *)
+                      sortedNames
+              val ltsinpos = List.map (fn (x,pos) => x) ts
+              val tenv' = tigertopsort.fijaTipos ltsinpos tenv
+	  in (venv, tenv', []) end (*COMPLETAR*)
   in trexp end
 fun transProg ex =
-  let	val main =
+  let val main =
 	    LetExp({decs=[FunctionDec[({name="_tigermain", params=[],
 					result=NONE, body=ex}, 0)]],
 		    body=UnitExp 0}, 0)

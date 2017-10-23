@@ -67,7 +67,8 @@ depend: tigerabs.sml tigergrm.sml tigerlex.sml tigermain.sml \
 tigermain.uo: tigerseman.ui tigerescap.ui tigergrm.ui tigerlex.uo \
     tigerabs.uo tigerpp.uo 
 tigerescap.uo: tigerescap.ui tigertab.ui tigerabs.uo 
-tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigerabs.uo 
+tigerseman.uo: tigerseman.ui tigersres.uo tigertab.ui tigertopsort.ui \
+    tigerabs.uo tigerpp.uo 
 tigertopsort.ui: tigertab.ui tigertips.uo tigerabs.uo 
 tigertemp.uo: tigertemp.ui 
 tigermuestratipos.uo: tigermuestratipos.ui tigertips.uo 
