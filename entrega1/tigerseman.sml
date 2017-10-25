@@ -38,14 +38,14 @@ val tab_vars : (string, EnvEntry) Tabla = tabInserList(
 		       formals=[TInt], result=TUnit, extern=true})
     ])
 
-fun tipoReal (TTipo s, (env : tenv)) : Tipo = 
-  (case tabBusca(s , env) of 
+fun tipoReal (TTipo s, (env : tenv)) : Tipo =
+  (case tabBusca(s , env) of
        NONE => raise Fail "tipoReal Ttipo"
      | SOME t => t)
   | tipoReal (t, _) = t
 
 fun tiposIguales (TRecord _) TNil = true
-  | tiposIguales TNil (TRecord _) = true 
+  | tiposIguales TNil (TRecord _) = true
   | tiposIguales (TRecord (_, u1)) (TRecord (_, u2 )) = (u1=u2)
   | tiposIguales (TArray (_, u1)) (TArray (_, u2)) = (u1=u2)
   | tiposIguales (TTipo _) b =
@@ -77,16 +77,16 @@ fun transExp(venv, tenv) =
 	| trexp(IntExp(i, _)) = {exp=() ,ty=TInt}
 	| trexp(StringExp(s, _)) = {exp=(), ty=TString}
 	| trexp(CallExp({func, args}, nl)) =
-      let
-          val (targs,tresult) = case tabBusca(func,venv) of
-              SOME (Func {formals=formals,result=result,level=_,label=_,extern=_}) => (formals,result)
-              | _ => error (func^" no es funciÃ³n o no estÃ¡ siendo definida en este batch.",nl)
-          val lteargs = List.map trexp args
-          val ltargs = List.map (#ty) lteargs
-          val _ = if List.length targs = List.length ltargs then () else error("FunciÃ³n "^func^" invocada con una cantidad incorrecta de argumentos!",nl)
-          val _ = List.map (fn(x,y) => cmpTipo(x,y,nl)) (ListPair.zip(ltargs,targs))
-                  handle Empty => error("NÂº de args",nl)
-      in {ty=tresult, exp=()} end (*COMPLETAR*)
+	  let
+              val (targs,tresult) = case tabBusca(func,venv) of
+					SOME (Func {formals=formals,result=result,level=_,label=_,extern=_}) => (formals,result)
+				      | _ => error (func^" no es funciÃ³n o no estÃ¡ siendo definida en este batch.",nl)
+              val lteargs = List.map trexp args
+              val ltargs = List.map (#ty) lteargs
+              val _ = if List.length targs = List.length ltargs then () else error("FunciÃ³n "^func^" invocada con una cantidad incorrecta de argumentos!",nl)
+              val _ = List.map (fn(x,y) => cmpTipo(x,y,nl)) (ListPair.zip(ltargs,targs))
+                      handle Empty => error("NÂº de args",nl)
+	  in {ty=tresult, exp=()} end (*COMPLETAR*)
 	| trexp(OpExp({left, oper=EqOp, right}, nl)) =
 	  let
 	      val {exp=_, ty=tyl} = trexp left
@@ -95,7 +95,7 @@ fun transExp(venv, tenv) =
 	      if tiposIguales tyl tyr andalso not (tyl=TNil andalso tyr=TNil) andalso tyl<>TUnit then {exp=(), ty=TInt}
 	      else error("Tipos no comparables", nl)
 	  end
-	| trexp(OpExp({left, oper=NeqOp, right}, nl)) = 
+	| trexp(OpExp({left, oper=NeqOp, right}, nl)) =
 	  let
 	      val {exp=_, ty=tyl} = trexp left
 	      val {exp=_, ty=tyr} = trexp right
@@ -103,7 +103,7 @@ fun transExp(venv, tenv) =
 	      if tiposIguales tyl tyr andalso not (tyl=TNil andalso tyr=TNil) andalso tyl<>TUnit then {exp=(), ty=TInt}
 	      else error("Tipos no comparables", nl)
 	  end
-	| trexp(OpExp({left, oper, right}, nl)) = 
+	| trexp(OpExp({left, oper, right}, nl)) =
 	  let
 	      val {exp=_, ty=tyl} = trexp left
 	      val {exp=_, ty=tyr} = trexp right
@@ -132,7 +132,7 @@ fun transExp(venv, tenv) =
 						 TRecord (cs, u) => (TRecord (cs, u), cs)
 					       | _ => error(typ^" no es de tipo record", nl))
 				| NONE => error("Tipo inexistente ("^typ^")", nl)
-					       
+
 	      (* Verificar que cada campo esté en orden y tenga una expresión del tipo que corresponde *)
 	      fun verificar [] [] = ()
 		| verificar (c::cs) [] = error("Faltan campos", nl)
@@ -150,14 +150,14 @@ fun transExp(venv, tenv) =
 	  in {exp=(), ty=tipo} end
 	| trexp(AssignExp({var=SimpleVar s, exp}, nl)) =
 	  let val {exp=ee, ty=te} = trexp exp
-	      val tv = if tabEsta(s,tenv) then tabSaca(s,tenv) else error("Error variable sin definir", nl) 
+	      val tv = if tabEsta(s,tenv) then tabSaca(s,tenv) else error("Error variable sin definir", nl)
               val _ = if not(tiposIguales tv TIntRO) then error("Error de asignación a variable de solo lectura", nl) else ()
 	  in {exp=(), ty=TUnit} end (*COMPLETAR*)
 	| trexp(AssignExp({var, exp}, nl)) =
 	  let val {exp=ev, ty=tv} = trvar(var, nl)
 	      val {exp=ee, ty=te} = trexp(exp)
-	      val _ = if te <> TUnit andalso tiposIguales tv te then () else error("Error de asignación, el tipo declarado no coincide con el tipo asignado",nl) 
-	  in  {exp=(), ty=TUnit}(*COMPLETAR*) end 
+	      val _ = if te <> TUnit andalso tiposIguales tv te then () else error("Error de asignación, el tipo declarado no coincide con el tipo asignado",nl)
+	  in  {exp=(), ty=TUnit}(*COMPLETAR*) end
 	| trexp(IfExp({test, then', else'=SOME else'}, nl)) =
 	  let val {exp=testexp, ty=tytest} = trexp test
 	      val {exp=thenexp, ty=tythen} = trexp then'
@@ -198,23 +198,23 @@ fun transExp(venv, tenv) =
 	  let
 	      val (venv', tenv', _) = List.foldl (fn (d, (v, t, _)) => trdec(v, t) d) (venv, tenv, []) decs
 	      val {exp=expbody,ty=tybody}=transExp (venv', tenv') body
-	  in 
+	  in
 	      {exp=(), ty=tybody}
 	  end
 	| trexp(BreakExp nl) =
 	  {exp=(), ty=TUnit} (*COMPLETAR*)
 	| trexp(ArrayExp({typ, size, init}, nl)) =
-            let
-                val {exp=exps,ty=tys} = trexp size
-                val {exp=expi,ty=tyi} = trexp init
-                val _ = if tiposIguales tys (TIntRO) then () else error("El size del arreglo no es entero",nl) 
-                val (ta,ur) = ( case tabBusca(typ,tenv) of
+          let
+              val {exp=exps,ty=tys} = trexp size
+              val {exp=expi,ty=tyi} = trexp init
+              val _ = if tiposIguales tys (TIntRO) then () else error("El size del arreglo no es entero",nl)
+              val (ta,ur) = ( case tabBusca(typ,tenv) of
                                   SOME t => ( case t of
                                                   TArray (ta',ur') => (ta',ur')
                                                 | _ => error("El tipo "^typ^" no es un arreglo",nl) )
-                                  | _ => error("Tipo "^typ^" no definido",nl) )
-                val _ = if tiposIguales (!ta) tyi then () else error("La expresion inicializadora no es un "^typ,nl)(*no habria que imprimir !ta?*)
-            in {exp=(), ty=TArray (ta,ur)} end 
+                                | _ => error("Tipo "^typ^" no definido",nl) )
+              val _ = if tiposIguales (!ta) tyi then () else error("La expresion inicializadora no es un "^typ,nl)(*no habria que imprimir !ta?*)
+          in {exp=(), ty=TArray (ta,ur)} end
       and trvar(SimpleVar s, nl) =
           let
 	      val enventry = case tabBusca(s, venv) of
@@ -228,7 +228,7 @@ fun transExp(venv, tenv) =
 				TRecord (l,_) => ( case List.filter (fn x => #1x = s) l of
                                                        [] => error("Record no tiene campo "^s,nl)
                                                      | (e::_) => #2e )
-                              | _ => (tigerpp.prettyPrintTipo(tyv) ; error("No se puede indexar porque no es Record",nl)) 
+                              | _ => (tigerpp.prettyPrintTipo(tyv) ; error("No se puede indexar porque no es Record",nl))
 	  in {exp=(), ty=(!vartype)} (*COMPLETAR*) end
 	| trvar(SubscriptVar(v, e), nl) =
 	  let
@@ -238,22 +238,66 @@ fun transExp(venv, tenv) =
 	  in case tv of
 		 TArray (t,_) => {exp=(), ty=(!t)}
                | _ => error("Indexando algo que no es un arreglo", nl) end
-      and trdec (venv, tenv) (VarDec ({name,escape,typ,init},pos)) = 
+      and trdec (venv, tenv) (VarDec ({name,escape,typ,init},pos)) =
           let val {exp=expinit, ty=tyinit} = trexp init
               val tyv = case typ of
-                            NONE => if tiposIguales tyinit TNil then error("Error HA HA! Baboso", pos) else tyinit 
+                            NONE => if tiposIguales tyinit TNil then error("Error HA HA! Baboso", pos) else tyinit
                           | SOME nt => let val t' = case tabBusca(nt, tenv) of
 							SOME t'' => t''
 						      | NONE => error("VER ERROR",pos)
-                                           val _  = if tiposIguales tyinit t' then () else error("Error (VER QUE VA)", pos) 
+                                           val _  = if tiposIguales tyinit t' then () else error("Error (VER QUE VA)", pos)
                                        in t' end
               val venv' = tabInserta(name, (Var{ty=tyv}), venv)
           in (venv', tenv, []) end
-	| trdec (venv,tenv) (FunctionDec fs) =
-	  (venv, tenv, []) (*COMPLETAR*)    
+	| trdec (venv,tenv) (FunctionDec fs) = (* COMPLETAR *)
+          let (* Buscar si hay nombres repetidos. Recordar que no se pueden sobreescribir funciones dentro de un mismo batch *)
+              fun reps [] = false
+              |   reps (({name,...},nl) :: t) = if List.exists (fn ({name = x,...},_) => x = name) t then true else reps t
+              val _ = if reps fs then raise Fail ("trdec(FunctionDec): Nombres repetidos\n") else ()
+
+              fun tyToTipo [] = []
+                | tyToTipo ({typ=NameTy s, ... } :: ss) =
+                  (case tabBusca(s, tenv) of
+                       SOME t => (t :: tyToTipo ss)
+                     | _ => raise Fail ("trdec(FunctionDec): el tipo "^s^" es inexistente\n"))
+                | tyToTipo _ = raise Fail ("trdec(FunctionDec): esto no deberia pasar!\n") (* no puede pasar ya que la sintaxis de tiger no permite que los argumentos tengan explicitamente tipo record o array. Para ello hay que definir una etiqueta *)
+
+              fun aux venv' [] = venv'
+                | aux venv' (({name, params, result, ...}, nl)::fss) =
+                  let val resultType = case result of
+                                           NONE => TUnit
+                                         | SOME t => case tabBusca(t, tenv) of
+                                                         NONE => error ("trdec(FunctionDec) (aux): el tipo "^t^" no existe!", nl)
+                                                       | SOME t' => t'
+                      val entry = Func {level=(), label=tigertemp.newlabel(), formals=tyToTipo params, result=resultType, extern=false}
+                      (* extern=false ya que las funciones externas se definen en runtime *)
+                      val venv'' = tabRInserta(name, entry, venv')
+                  in aux venv'' fss end
+              fun addParams venv [] = ()
+              |   addParams venv (({name,params, body, ...}, nl)::fss) =
+                  let
+                      val tipos = tyToTipo params
+                      val nombres = map #name params
+                      fun addParam [] [] venv = venv
+                      |   addParam (n::ns) (t::ts) venv = addParam ns ts (tabRInserta(n,Var{ty=t},venv))
+                      |   addParam _ _ _ = error("trdec(FunctionDec): Error interno en addParams 1",nl)
+                      val venv' = addParam nombres tipos venv
+                      val {ty = tyBody,...} = transExp (venv',tenv) body
+                      val tyResult = case tabBusca(name,venv) of
+                                         NONE => error("trdec(FunctionDec): Error interno en addParams 2",nl)
+                                       | SOME (Func{result,...}) => result
+                                       | SOME _ => error("trdec(FunctionDec): Error interno en addParams 3",nl)
+                      (* val _ = printTipo tyBody
+                        val _ = printTipo tyResult *)
+                      val _ = if tiposIguales tyBody tyResult then () else error("trdec(FunctionDec): Los tipos de retorno de la funcion y el tipo de su body no coinciden",nl)
+                  in addParams venv fss end
+
+              val venv' = aux venv fs
+              val _ = addParams venv' fs
+          in (venv', tenv, []) end
 	| trdec (venv,tenv) (TypeDec ts) =
-          let val sortedNames = Listsort.sort 
-                                (fn (({name=x,ty=_},_), ({name=y,ty=_},_)) => if x<y then LESS else (if x>y then GREATER else EQUAL)) 
+          let val sortedNames = Listsort.sort
+                                (fn (({name=x,ty=_},_), ({name=y,ty=_},_)) => if x<y then LESS else (if x>y then GREATER else EQUAL))
                                 ts
               val _ = List.foldr (* Chequea que no hay dos seguidos iguales en sortedNames *)
                       (fn (t1 as ({name=n1,ty=_},posx), ({name=n2,ty=_},_)) => if n1=n2 then error("Se definiÃ³ dos veces el tipo "^n1^" en un mismo batch.",posx) else t1)
