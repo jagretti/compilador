@@ -76,6 +76,27 @@ fun main(args) =
 	val _ = if arbol then tigerpp.exprAst expr else ()
 	val argsSize = maxargs(expr)
 	val plusAmount = cantplus(expr)
+(*	val lista = [("print", Func{level=mainLevel, label="print",
+                formals=[TString], result=TUnit, extern=true}),
+        ("flush", Func{level=mainLevel, label="flush",
+                formals=[], result=TUnit, extern=true}),
+        ("getchar", Func{level=mainLevel, label="getstr",
+                formals=[], result=TString, extern=true}),
+        ("ord", Func{level=mainLevel, label="ord",
+                formals=[TString], result=TInt, extern=true}),
+        ("chr", Func{level=mainLevel, label="chr",
+                formals=[TInt], result=TString, extern=true}),
+        ("size", Func{level=mainLevel, label="size",
+                formals=[TString], result=TInt, extern=true}),
+        ("substring", Func{level=mainLevel, label="substring",
+                formals=[TString, TInt, TInt], result=TString, extern=true}),
+        ("concat", Func{level=mainLevel, label="concat",
+                formals=[TString, TString], result=TString, extern=true}),
+        ("not", Func{level=mainLevel, label="not",
+                formals=[TInt], result=TInt, extern=true}),
+        ("exit", Func{level=mainLevel, label="exit",
+                formals=[TInt], result=TUnit, extern=true})
+        ]*)
   in
       transProg(expr);
       print "yes!!\n";
@@ -83,6 +104,7 @@ fun main(args) =
       print "\n";
       print (Int.toString(plusAmount));
       print "\n"
+      (*prettyPrintEnv(map (#2) lista)*)
   end	handle Fail s => print("Fail: "^s^"\n")
 
 val _ = main(CommandLine.arguments())
